@@ -44,4 +44,4 @@ This project is a single-page HTML application that displays a personal CV or ti
 
 ## Setup
 
-No special setup is required. Simply open the [`cv.html`](cv.html) file in a modern web browser.
+No special setup is required. Simply open the [`index.html`](index.html) file in a modern web browser.
