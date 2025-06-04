@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İsmet’in Zaman Çizelgesi & Deneyimleri</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .timeline-container-wrapper {
+            padding-top: 2rem;
+            padding-bottom: 4rem;
+            overflow-x: auto; 
+        }
+        #timelineArea {
+            min-width: 900px; 
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .repo-card {
+            transition: box-shadow 0.2s ease-in-out;
+            cursor: grab;
+            position: absolute; 
+        }
+        .repo-card:hover {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .duration-bar-on-axis {
+            /* Genişlik JavaScript'te ayarlanacak */
+            position: absolute;
+            z-index: 15; /* Ana eksen çizgisinin üzerinde */
+            border-radius: 2px; /* Hafif yuvarlak köşe */
+        }
+        .dragging {
+            cursor: grabbing !important;
+            opacity: 0.85;
+            z-index: 1000 !important; 
+        }
+        .connector-line {
+            stroke-width: 2px;
+            /* z-index SVG elemanları için doğrudan geçerli değil, sıralama ile yönetilir. SVG elementi z-index:20 */
+        }
+        .timeline-node {
+            z-index: 30; 
+        }
+        #axisLine {
+            z-index: 10; /* Duration bar'ın altında */
+        }
+    </style>
+    <link rel="icon" href="https://placehold.co/32x32/7c3aed/ffffff?text=A" type="image/png">
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="timeline-container-wrapper container mx-auto px-4 sm:px-6 lg:px-8 max-w-full">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-12 sm:mb-16">
+            İsmet’in Zaman Çizelgesi & Deneyimleri
+        </h1>
+
+        <div id="timelineArea" class="relative w-full">
+            <svg id="svgConnectors" class="absolute top-0 left-0 w-full h-full" style="pointer-events: none; z-index: 20;"></svg>
+           
+            
+        </div>
+    </div>
+
+    <script>
+        const ismetExperiences = [
+          {
+            id: 'edu-gazi', type: 'Eğitim', label: "Bilgisayar Müh. Lisans", repoName: 'gazi-cs-lisans',
+            subBranches: ['bitirme-projesi', 'programlama', 'uni-topluluk'],
+            startDate: '2016-09', endDate: '2021-11', color: 'bg-sky-600', strokeColor: 'stroke-sky-600', textColor: 'text-sky-700', borderColor: 'border-sky-600', lane: 0,
+            description: 'Gazi Üniversitesi Bilgisayar Mühendisliği bölümünde lisans eğitimi tamamlandı. Çeşitli projeler ve derslerle teorik ve pratik bilgiler edinildi.'
+          },
+          {
+            id: 'intern-amazoi', type: 'Staj', label: "Unity Oyun Geliştirme Stajı", repoName: 'staj-oyun-3d',
+            subBranches: ['oyun-gelistirme', 'unity-ile-3d', 'hata-duzeltmeleri'],
+            startDate: '2020-10', endDate: '2021-01', color: 'bg-emerald-500', strokeColor: 'stroke-emerald-500', textColor: 'text-emerald-700', borderColor: 'border-emerald-500', lane: 1,
+            description: 'Amazoi Software\'de Unity ve C# kullanarak oyun geliştirme süreçlerine aktif katılım sağlandı. Oyun mekanikleri ve varlık yönetimi üzerinde çalışıldı.'
+          },
+          {
+            id: 'intern-pepteam', type: 'Staj', label: "Flutter Mobil Uyg. Stajı", repoName: 'peptask-mobil-uygulama',
+            subBranches: ['mobil-proje-gelistirme', 'is-surecleri', 'startup-ekosistemi'],
+            startDate: '2021-07', endDate: '2021-09', color: 'bg-teal-500', strokeColor: 'stroke-teal-500', textColor: 'text-teal-700', borderColor: 'border-teal-500', lane: 1,
+            description: 'PepTeam Software\'de Flutter ile cross-platform mobil uygulama geliştirme stajı. Arayüz geliştirme ve state management konularına odaklanıldı.'
+          },
+          {
+            id: 'train-iskur', type: 'Eğitim', label: "Oyun Geliştirme Kampı", repoName: 'iskur-unity-kurs',
+            subBranches: ['tum-oyun-surecleri', 'oyun-tasarim', 'charpt-oyun-programlama'],
+            startDate: '2022-01', endDate: '2022-05', color: 'bg-amber-500', strokeColor: 'stroke-amber-500', textColor: 'text-amber-700', borderColor: 'border-amber-500', lane: 0,
+            description: 'İŞKUR & Üsküdar Üniversitesi işbirliğiyle düzenlenen 600 saatlik Unity ve C# odaklı oyun geliştirme eğitimi.'
+          },
+          {
+            id: 'job-spectrum', type: 'İş', label: "SAP Fiori Geliştirici", repoName: 'spectrum-sap-fiori',
+            subBranches: ['fiori-launchpad-ozellestirme', 'odata-servisleri-kullanimi', 'ui5-kutuphanesi'],
+            startDate: '2022-07', endDate: '2025-06', 
+            displayEndDate: 'Devam Ediyor', 
+            color: 'bg-green-600', strokeColor: 'stroke-green-600', textColor: 'text-green-700', borderColor: 'border-green-600', lane: 0,
+            description: 'Spectrum Informatics\'te SAP Fiori uygulamaları geliştirme ve optimizasyonu. SAPUI5, JavaScript ve OData teknolojileri kullanılarak kullanıcı arayüzleri iyileştirildi.'
+          },
+          {
+            id: 'cert-upod', type: 'Sertifika', label: "Veri Bilimi Temelleri", repoName: 'upod-veribilimi-egitimi',
+            subBranches: ['python-egitimi', 'django-projeleri', 'veri-bilimi-temelleri'],
+            startDate: '2023-05', endDate: '2024-12', 
+            color: 'bg-purple-600', strokeColor: 'stroke-purple-600', textColor: 'text-purple-700', borderColor: 'border-purple-600', lane: 1,
+            description: 'UPOD (Dijital Gelecek Topluluğu) tarafından sunulan Veri Bilimi eğitimi. Python, SQL ve R temelleri üzerine kapsamlı bir program.'
+          }
+        ];
+
+        const timelineArea = document.getElementById('timelineArea');
+        const svgConnectors = document.getElementById('svgConnectors');
+        const timelineHeight = 1200; 
+        const minYear = 2016;
+        const maxYear = 2025;
+        const yearSpan = maxYear - minYear;
+
+        const timelineAxisLeft = 80; 
+        const axisLineWidth = 2; // px
+        const durationBarWidth = 4; // px, ana eksenden biraz daha kalın
+        // Süre çubuğunu ana eksene ortalamak için:
+        const durationBarLeftOffset = timelineAxisLeft - (durationBarWidth - axisLineWidth) / 2; 
+
+        const firstLaneHorizontalOffset = timelineAxisLeft + 60; 
+        const cardWidth = 288; // w-72
+        // const cardHeight = 180; // Ortalama, dinamik olarak offsetHeight kullanılacak
+        const laneGap = 40; 
+
+        timelineArea.style.height = `${timelineHeight + 250}px`;
+
+        // 1. Dikey Zaman Çizelgesi Ekseni
+        const axisLine = document.createElement('div');
+        axisLine.id = 'axisLine'; // CSS ile z-index vermek için ID
+        axisLine.className = 'absolute top-0 bottom-0 bg-gray-300'; // Daha açık bir renk
+        axisLine.style.left = `${timelineAxisLeft}px`;
+        axisLine.style.width = `${axisLineWidth}px`; 
+        axisLine.style.height = `${timelineHeight + 20}px`;
+        timelineArea.appendChild(axisLine);
+
+        // 2. Yıl İşaretçileri
+        for (let i = 0; i <= yearSpan; i++) {
+            const year = minYear + i;
+            const yPos = (i / yearSpan) * timelineHeight;
+            const yearMarkerContainer = document.createElement('div');
+            yearMarkerContainer.className = 'absolute flex items-center z-20'; // Noktaların ve yazıların en üstte olması için
+            yearMarkerContainer.style.top = `${yPos}px`;
+            yearMarkerContainer.style.left = `0px`;
+            yearMarkerContainer.style.height = '24px';
+            const yearLabel = document.createElement('span');
+            yearLabel.className = 'text-xs sm:text-sm text-gray-500 font-medium';
+            yearLabel.textContent = year;
+            yearLabel.style.width = `${timelineAxisLeft - 20}px`;
+            yearLabel.style.textAlign = 'right';
+            yearLabel.style.marginRight = '20px';
+            const yearDot = document.createElement('div');
+            yearDot.className = 'w-3 h-3 bg-gray-500 rounded-full absolute ring-1 ring-white'; 
+            yearDot.style.left = `${timelineAxisLeft - 5}px`; 
+            yearDot.style.top = '50%';
+            yearDot.style.transform = 'translateY(-50%)';
+            yearMarkerContainer.appendChild(yearLabel);
+            yearMarkerContainer.appendChild(yearDot);
+            timelineArea.appendChild(yearMarkerContainer);
+        }
+
+        function mapDateToPosition(dateString) {
+            if (!dateString) { 
+                const now = new Date();
+                const currentFractionalYear = Math.min(maxYear, now.getFullYear() + (now.getMonth()) / 12);
+                return ((currentFractionalYear - minYear) / yearSpan) * timelineHeight;
+            }
+            const [year, month] = dateString.split('-').map(Number);
+            const fractionalYear = year + (month - 1) / 12;
+            return ((fractionalYear - minYear) / yearSpan) * timelineHeight;
+        }
+        
+        function formatDate(dateString) {
+            if (!dateString) return 'Halen';
+            const [year, month] = dateString.split('-');
+            const date = new Date(year, month - 1);
+            return date.toLocaleDateString('tr-TR', { month: 'short', year: 'numeric' });
+        }
+
+        let draggedCard = null;
+        let dragOffsetX = 0;
+        let dragOffsetY = 0;
+
+        function onCardMouseDown(event) {
+            if (event.button !== 0) return;
+            draggedCard = event.currentTarget; 
+            
+            const rect = draggedCard.getBoundingClientRect();
+            dragOffsetX = event.clientX - rect.left;
+            dragOffsetY = event.clientY - rect.top;
+            
+            draggedCard.classList.add('dragging');
+            // CSS'teki .dragging sınıfı z-index'i zaten yönetiyor (1000 !important)
+            document.addEventListener('mousemove', onCardMouseMove);
+            document.addEventListener('mouseup', onCardMouseUp);
+        }
+
+        function onCardMouseMove(event) {
+            if (!draggedCard) return;
+            event.preventDefault();
+
+            const timelineAreaRect = timelineArea.getBoundingClientRect();
+            
+            // Kartın yeni pozisyonunu timelineArea'ya göre hesapla
+            let newLeft = event.clientX - dragOffsetX - timelineAreaRect.left + timelineArea.scrollLeft;
+            let newTop = event.clientY - dragOffsetY - timelineAreaRect.top + timelineArea.scrollTop;
+
+            draggedCard.style.left = `${newLeft}px`;
+            draggedCard.style.top = `${newTop}px`;
+
+            const lineId = `line-${draggedCard.dataset.itemId}`;
+            const line = document.getElementById(lineId);
+            if (line) {
+                // Çizginin bitiş noktasını kartın sol ortasına güncelle
+                // newLeft ve newTop zaten timelineArea'ya göreli
+                line.setAttribute('x2', newLeft.toString()); // Kartın sol kenarı
+                line.setAttribute('y2', (newTop + draggedCard.offsetHeight / 2).toString()); // Kartın dikey ortası
+            }
+        }
+
+        function onCardMouseUp() {
+            if (draggedCard) {
+                draggedCard.classList.remove('dragging');
+                // Z-index'i şerit bazlı orijinal değerine döndür
+                const itemData = ismetExperiences.find(exp => exp.id === draggedCard.dataset.itemId);
+                if (itemData) {
+                     draggedCard.style.zIndex = (itemData.lane || 0) + 50; 
+                } else {
+                    draggedCard.style.zIndex = '50'; // Varsayılan
+                }
+            }
+            draggedCard = null;
+            document.removeEventListener('mousemove', onCardMouseMove);
+            document.removeEventListener('mouseup', onCardMouseUp);
+        }
+
+        ismetExperiences.forEach(item => {
+            const startY = mapDateToPosition(item.startDate);
+            const endY = mapDateToPosition(item.endDate); 
+            const itemDurationHeight = Math.max(5, endY - startY); 
+
+            // Ana eksen üzerinde dikey süre çubuğu
+            const durationBarOnAxis = document.createElement('div');
+            durationBarOnAxis.className = `duration-bar-on-axis ${item.color}`;
+            durationBarOnAxis.style.top = `${startY}px`;
+            durationBarOnAxis.style.height = `${itemDurationHeight}px`;
+            durationBarOnAxis.style.left = `${durationBarLeftOffset}px`; 
+            durationBarOnAxis.style.width = `${durationBarWidth}px`;
+            timelineArea.appendChild(durationBarOnAxis);
+            
+            // Sabit Nokta (Node)
+            const nodeElement = document.createElement('div');
+            nodeElement.className = `timeline-node w-3.5 h-3.5 ${item.color} rounded-full absolute ring-2 ring-white`; // dark:ring-gray-900 kaldırıldı, body bg-gray-50
+            const nodeSize = 14; // px (w-3.5)
+            const nodeTop = startY; // Süre çubuğunun başlangıcına tam hizalı
+            // Node'u ana eksen çizgisine ortala: timelineAxisLeft - (nodeGenişliği/2) + (eksenGenişliği/2)
+            const nodeLeft = timelineAxisLeft - (nodeSize / 2) + (axisLineWidth / 2); 
+            nodeElement.style.top = `${nodeTop}px`; 
+            nodeElement.style.left = `${nodeLeft}px`; 
+            nodeElement.id = `node-${item.id}`;
+            timelineArea.appendChild(nodeElement);
+
+            // Repo Kartı
+            const card = document.createElement('div');
+            card.dataset.itemId = item.id; 
+            card.className = `repo-card p-3 sm:p-4 rounded-lg shadow-lg bg-white ${item.borderColor} border w-64 sm:w-72 min-h-[120px]`;
+            const initialCardLeft = firstLaneHorizontalOffset + item.lane * (cardWidth + laneGap);
+            const initialCardTop = startY; // Kartı da node ile aynı dikey seviyeden başlat
+            card.style.left = `${initialCardLeft}px`;
+            card.style.top = `${initialCardTop}px`;
+            card.style.zIndex = (item.lane || 0) + 50; 
+            card.addEventListener('mousedown', onCardMouseDown);
+
+            const startDateFormatted = formatDate(item.startDate);
+            const endDateFormatted = item.displayEndDate ? item.displayEndDate : formatDate(item.endDate);
+
+            card.innerHTML = `
+                <div class="flex justify-between items-start mb-1.5">
+                    <span class="font-semibold text-sm sm:text-base ${item.textColor} break-words">${item.repoName}</span>
+                    <span class="flex-shrink-0 ml-2 px-2 py-0.5 text-xs rounded-full ${item.color} text-white">${item.type}</span>
+                </div>
+                <p class="text-sm sm:text-md font-medium text-gray-700 mb-1">${item.label}</p>
+                <p class="text-xs text-gray-500 mb-2.5">${startDateFormatted} – ${endDateFormatted}</p>
+                ${item.description ? `<p class="text-xs text-gray-600 mb-3 leading-relaxed">${item.description}</p>` : ''}
+                <div class="space-y-1">
+                    ${item.subBranches.map(sb => `
+                        <div class="flex items-center text-xs text-gray-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 mr-1.5 ${item.textColor} opacity-75 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                            </svg>
+                            <span class="break-all">${sb}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            timelineArea.appendChild(card);
+
+            // SVG Bağlantı Çizgisi
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('id', `line-${item.id}`);
+            // Çizgiyi node'un merkezinden başlat
+            line.setAttribute('x1', (nodeLeft + nodeSize / 2).toString()); 
+            line.setAttribute('y1', (nodeTop + nodeSize / 2).toString()); 
+            
+            // İlk çizim için kartın sol ortasına bağla
+            // Kart DOM'a eklendikten sonra offsetHeight'i almak daha güvenilir
+            requestAnimationFrame(() => {
+                 line.setAttribute('x2', initialCardLeft.toString());
+                 line.setAttribute('y2', (initialCardTop + card.offsetHeight / 2).toString());
+            });
+            
+            line.classList.add('connector-line', item.strokeColor || 'stroke-gray-500');
+            svgConnectors.appendChild(line);
+        });
+    </script>
+</body>
+</html>
