@@ -2,6 +2,7 @@
 
 This project is a single-page HTML application that displays a personal CV or timeline of experiences in an interactive and visually appealing way.
 
+[![View Demo](https://img.shields.io/badge/View-Demo-green?style=for-the-badge)](https://ismntr.github.io/cv/)
 ## Features
 
 *   **Dynamic Timeline:** Displays events (education, work experience, certifications, etc.) along a vertical timeline.
